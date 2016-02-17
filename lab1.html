@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+            <title>2D Triangle</title>
+            
+            <script type="text/javascript" src="../Common/webgl-utils.js"></script>
+            <script type="text/javascript" src="../Common/InitShaders.js"></script>
+            <script type="text/javascript" src="../Common/MV.js"></script>
+
+			<script type="x-shader/x-vertex" id="vert_basic">
+attribute vec4 vPosition;
+uniform mat4 mTransform;
+
+void main(void) {
+	gl_Position = mTransform * vPosition;
+	gl_PointSize = 1.0;
+}
+			</script>
+			<script type="x-shader/x-fragment" id="frag_solid">
+precision mediump float;
+uniform vec4 vColor;
+
+void main(void) {
+	gl_FragColor = vColor;
+}
+			</script>
+			<script type="x-shader/x-fragment" id="frag_wavy-plaid">
+precision mediump float;
+uniform float fTime;
+
+void main(void) {
+	gl_FragColor = vec4(1.0, sin(fTime+gl_FragCoord.x/20.0)/2.0+0.5, cos(fTime+gl_FragCoord.y/10.0)/2.0+0.5, 1.0);
+}
+			</script>
+			<script type="x-shader/x-fragment" id="frag_dotty">
+precision mediump float;
+uniform float fTime;
+
+void main(void) {
+	gl_FragColor = vec4((sin(fTime) * sin(fTime+gl_FragCoord.x/5.0)/2.0+0.5) * (cos(fTime+gl_FragCoord.y/5.0)/2.0+0.5), (sin(fTime+gl_FragCoord.x/5.0)/2.0+0.5) * (cos(fTime+gl_FragCoord.y/5.0)/2.0+0.5), (sin(fTime+gl_FragCoord.x/5.0)/2.0+0.5) * (sin(fTime) * cos(fTime+gl_FragCoord.y/5.0)/2.0+0.5), 1.0);
+}
+			</script>
+			<script type="x-shader/x-fragment" id="frag_blink">
+precision mediump float;
+uniform float fTime;
+
+void main(void) {
+	gl_FragColor = vec4(0.0, 0.0, pow((sin(fTime) * sin(gl_FragCoord.x/20.0)/2.0+0.5) * (cos(gl_FragCoord.y/10.0)/2.0+0.5), cos(fTime) + 1.5), 1.0);
+}
+			</script>
+			<script type="x-shader/x-vertex" id="vert_btex">
+precision mediump float;
+attribute vec4 vPosition;
+attribute vec2 vTexCoord;
+uniform mat4 mTransform;
+varying vec2 vUV;
+
+void main(void) {
+	gl_Position = mTransform * vPosition;
+	gl_PointSize = 1.0;
+	vUV = vTexCoord;
+}
+			</script>
+			<script type="x-shader/x-fragment" id="frag_btex">
+precision mediump float;
+uniform sampler2D sTex;
+uniform vec4 vColor;
+varying vec2 vUV;
+
+void main(void) {
+	gl_FragColor = texture2D(sTex, vUV) * vColor;
+}
+			</script>
+			<script type="text/javascript" src="oogl.js"></script>
+			<script type="text/javascript" src="lab1.js"></script>
+        
+        
+            
+    </head>
+    
+    <body onload="initScene();" style="margin: 0; padding: 0;">
+		<canvas id="gl-canvas" style="margin: 0; padding: 0; position: fixed; width: 100%; height: 100%;"></canvas>
+		<div id="frame">0</div>
+    </body>
+</html>
+
