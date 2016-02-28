@@ -53,35 +53,50 @@ function initScene() {
 	// 	return;
 	// }
 
-	prog_yellow = new Program("vert_basic", "frag_solid", {
+	prog_yellow = new Program({
+		"VERTEX_SHADER": document.querySelector("#vert_basic"),
+		"FRAGMENT_SHADER": document.querySelector("#frag_solid"),
+	}, {
 		"attributes": ["vPosition"],
 		"uniforms": ["vColor", "mTransform"],
 	});
 	prog_yellow.u.vColor.set(vec4(1.0, 1.0, 0.0, 1.0));
 	prog_yellow.u.mTransform.set(mat4());
 
-	prog_wavy = new Program("vert_basic", "frag_wavy-plaid", {
+	prog_wavy = new Program({
+		"VERTEX_SHADER": document.querySelector("#vert_basic"),
+		"FRAGMENT_SHADER": document.querySelector("#frag_wavy-plaid"),
+	}, {
 		"attributes": ["vPosition"],
 		"uniforms": ["mTransform", "fTime"],
 	});
 	prog_wavy.u.mTransform.set(mat4());
 	prog_wavy.u.fTime.set(0.0);
 
-	prog_dotty = new Program("vert_basic", "frag_dotty", {
+	prog_dotty = new Program({
+		"VERTEX_SHADER": document.querySelector("#vert_basic"),
+		"FRAGMENT_SHADER": document.querySelector("#frag_dotty"),
+	}, {
 		"attributes": ["vPosition"],
 		"uniforms": ["mTransform", "fTime"],
 	});
 	prog_dotty.u.mTransform.set(mat4());
 	prog_dotty.u.fTime.set(0.0);
 
-	prog_blink = new Program("vert_basic", "frag_blink", {
+	prog_blink = new Program({
+		"VERTEX_SHADER": document.querySelector("#vert_basic"),
+		"FRAGMENT_SHADER": document.querySelector("#frag_blink"),
+	}, {
 		"attributes": ["vPosition"],
 		"uniforms": ["mTransform", "fTime"],
 	});
 	prog_blink.u.mTransform.set(mat4());
 	prog_blink.u.fTime.set(0.0);
 
-	prog_btex = new Program("vert_btex", "frag_btex", {
+	prog_btex = new Program({
+		"VERTEX_SHADER": document.querySelector("#vert_btex"),
+		"FRAGMENT_SHADER": document.querySelector("#frag_btex"),
+	}, {
 		"attributes": ["vPosition", "vTexCoord"],
 		"uniforms": ["mTransform", "vColor", "sTex"],
 	});

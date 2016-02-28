@@ -1,20 +1,37 @@
 /* Simple object-oriented overlays to GL */
 
-function Buffer(data, drawtype) {
+var BUFFER_GL_TYPES = undefined
+
+function Buffer(data, dtype, target, drawtype) {
+	if(BUFFER_GL_TYPES == undefined) {
+		BUFFER_GL_TYPES = {};
+		BUFFER_GL_TYPES[Uint8Array] = gl.UNSIGNED_BYTE
+		BUFFER_GL_TYPES[Uint16Array] = gl.UNSIGNED_SHORT
+		BUFFER_GL_TYPES[Uint32Array] = gl.UNSIGNED_INT
+		BUFFER_GL_TYPES[Int8Array] = gl.BYTE
+		BUFFER_GL_TYPES[Int16Array] = gl.SHORT
+		BUFFER_GL_TYPES[Int32Array] = gl.INT
+		BUFFER_GL_TYPES[Float32Array] = gl.FLOAT
+	}
 	this.object = gl.createBuffer();
+	if(dtype == undefined) dtype = Float32Array;
+	this.dtype = dtype;
+	if(target == undefined) target = gl.ARRAY_BUFFER;
+	this.target = target;
 	if(data != undefined) {
 		this.set(data, drawtype);
 	}
 }
 
 Buffer.prototype.set = function(data, drawtype) {
-	gl.bindBuffer(gl.ARRAY_BUFFER, this.object);
+	gl.bindBuffer(this.target, this.object);
+	this.data = data;
 	if(drawtype == undefined) {
 		drawtype = gl.STATIC_DRAW;
 	}
 	if(Array.isArray(data)) {
 		if(data.length == 0) {
-			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(), drawtype);
+			gl.bufferData(this.target, new this.dtype(), drawtype);
 			return;
 		}
 		if(Array.isArray(data[0])) {
@@ -23,11 +40,21 @@ Buffer.prototype.set = function(data, drawtype) {
 			this.itemSize = 1;
 		}
 		this.items = data.length;
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(flatten(data)), drawtype);
+		gl.bufferData(this.target, new this.dtype(flatten(data)), drawtype);
 		return;
 	}
-	throw "Unknown type to set: "+val;
+	throw new Error("Unknown type to set: "+typeof(data));
 };
+
+Buffer.prototype.bind = function() {
+	gl.bindBuffer(this.target, this.object);
+}
+
+Object.defineProperty(Buffer.prototype, "glType", {
+	"get": function() {
+		return BUFFER_GL_TYPES[this.dtype];
+	}
+});
 
 function UniformVar(prog, name) {
 	this.prog = prog;
@@ -42,6 +69,9 @@ UniformVar.prototype.rebind = function() {
 
 UniformVar.prototype.set = function(val) {
 	gl.useProgram(this.prog);
+	if(val.toUniValue) {
+		val = val.toUniValue(this);
+	}
 	if(val.tex) {
 		gl.uniform1i(this.index, val.unit);
 		return;
@@ -58,7 +88,7 @@ UniformVar.prototype.set = function(val) {
 				gl.uniformMatrix4fv(this.index, false, new Float32Array(flatten(val)));
 				break;
 			default:
-				throw "Bad matrix length: "+val.length;
+				throw new Error("Bad matrix length: "+val.length);
 				break;
 		}
 		return;
@@ -75,7 +105,7 @@ UniformVar.prototype.set = function(val) {
 				gl.uniform4fv(this.index, new Float32Array(val));
 				break;
 			default:
-				throw "Bad vector length: "+val.length;
+				throw new Error("Bad vector length: "+val.length);
 				break;
 		}
 		return;
@@ -84,7 +114,7 @@ UniformVar.prototype.set = function(val) {
 		gl.uniform1f(this.index, val);
 		return;
 	}
-	throw "Unknown type to set: "+val;
+	throw new Error("Unknown type to set: "+val);
 };
 
 function AttribVar(prog, name) {
@@ -103,9 +133,12 @@ AttribVar.prototype.set = function(buffer, norm, stride, offset) {
 	if(stride == undefined) stride = 0;
 	if(offset == undefined) offset = 0;
 	gl.useProgram(this.prog);
-	gl.bindBuffer(gl.ARRAY_BUFFER, buffer.object);
+	if(buffer.target != gl.ARRAY_BUFFER) {
+		throw new Error("Can't use buffer with target "+buffer.target+" for attributes");
+	}
+	buffer.bind();
 	gl.enableVertexAttribArray(this.index);
-	gl.vertexAttribPointer(this.index, buffer.itemSize, gl.FLOAT, norm, stride, offset);
+	gl.vertexAttribPointer(this.index, buffer.itemSize, buffer.glType, norm, stride, offset);
 	this.buffer = buffer;
 };
 
@@ -192,10 +225,40 @@ function _loader_start(req) {
 	}
 }
 
-function Program(vs, fs, options) {
+function Program(sources, options) {
 	var uniform_names = options.uniforms || [];
 	var attribute_names = options.attributes || [];
-	this.prog = initShaders(gl, vs, fs);
+	this.prog = gl.createProgram();
+	for(shadtp in sources) {
+		if(Object.prototype.hasOwnProperty.call(sources, shadtp)) {
+			var value = sources[shadtp];
+			if(value instanceof HTMLScriptElement) {
+				if(!value.text.length) {
+					var xhr = new XMLHttpRequest();
+					xhr.open('GET', value.src, false);
+					xhr.send(null);
+					value = xhr.responseText;
+				} else {
+					value = value.text;
+				}
+			}
+			shad = gl.createShader(gl[shadtp]);
+			gl.shaderSource(shad, value);
+			gl.compileShader(shad);
+			if(!gl.getShaderParameter(shad, gl.COMPILE_STATUS)) {
+				alert(gl.getShaderInfoLog(shad));
+				return;
+			} else {
+				gl.attachShader(this.prog, shad);
+			}
+		}
+	}
+	gl.linkProgram(this.prog);
+	if(!gl.getProgramParameter(this.prog, gl.LINK_STATUS)) {
+		alert("Couldn't link shader program");
+		return;
+	}
+	this.use();
 	this.uniforms = {};
 	this.u = this.uniforms;
 	this.attributes = {};
@@ -211,8 +274,12 @@ function Program(vs, fs, options) {
 	});
 }
 
-Program.prototype.draw = function(prim, start_obj, amt) {
+Program.prototype.use = function() {
 	gl.useProgram(this.prog);
+}
+
+Program.prototype.draw = function(prim, start_obj, amt) {
+	this.use();
 	if(start_obj == undefined || (type(start_obj) == "number" && amt == undefined)) {
 		amt = 0
 		for(var name in this.attributes) {
@@ -228,8 +295,13 @@ Program.prototype.draw = function(prim, start_obj, amt) {
 	gl.drawArrays(prim, start_obj, amt);
 }
 
-function TRS(translate, rotate, scale) {
-	this.translate = translate || vec3(0, 0, 0);
-	this.rotate = rotate || vec4();
-	this.scale = scale;
+Program.prototype.drawIndexed = function(prim, indices, start, amt) {
+	this.use();
+	if(start == undefined) start = 0;
+	if(amt == undefined) amt = indices.items;
+	if(indices.target != gl.ELEMENT_ARRAY_BUFFER) {
+		throw new Error("Can't use buffer with target "+buffer.target+" for indexed drawing");
+	}
+	indices.bind();
+	gl.drawElements(prim, amt, indices.glType, start);
 }

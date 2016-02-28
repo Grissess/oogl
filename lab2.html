@@ -4,9 +4,9 @@
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
             <title>2D Triangle</title>
             
-            <script type="text/javascript" src="../Common/webgl-utils.js"></script>
-            <script type="text/javascript" src="../Common/InitShaders.js"></script>
-            <script type="text/javascript" src="../Common/MV.js"></script>
+            <script type="text/javascript" src="Common/webgl-utils.js"></script>
+            <script type="text/javascript" src="Common/InitShaders.js"></script>
+            <script type="text/javascript" src="Common/MV.js"></script>
 
 			<script type="x-shader/x-vertex" id="vert_basic_tex">
 precision mediump float;
@@ -40,8 +40,8 @@ void main(void) {
             
     </head>
     
-    <body onload="initScene();" onkeypress="onKey();" style="margin: 0; padding: 0;">
-		<canvas onclick="onClick();" id="gl-canvas" style="margin: 0; padding: 0; width: 512px; height: 512px;"></canvas>
+    <body onload="initScene();" onkeypress="onKey(event);" style="margin: 0; padding: 0;">
+		<canvas onclick="onClick(event);" id="gl-canvas" style="margin: 0; padding: 0; width: 512px; height: 512px;"></canvas>
 		<button onclick="rotateStart();">Start Rotation</button>
 		<button onclick="rotateStop();">Stop Rotation</button>
 		<br/>

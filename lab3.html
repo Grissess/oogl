@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+		<title>Lab 3</title>
+		
+		<script type="x-shader/x-vertex" id="vert_basic" src="basic.vs"></script>
+		<script type="x-shader/x-fragment" id="frag_smooth" src="smooth.fs"></script>
+
+		<script type="text/javascript" src="Common/webgl-utils.js"></script>
+		<script type="text/javascript" src="Common/MV.js"></script>
+		<script type="text/javascript" src="quat.js"></script>
+		<script type="text/javascript" src="oogl.js"></script>
+		<script type="text/javascript" src="polytope.js"></script>
+		<script type="text/javascript" src="lab3.js"></script>
+	</head>
+    <body onload="initScene();" onkeypress="onKey(event);" style="margin: 0; padding: 0;">
+		<canvas onmousedown="onMouseDown(event);" onmouseup="onMouseUp(event);" onmousemove="onMove(event);" id="gl-canvas" style="margin: 0; padding: 0; width: 512px; height: 512px;"></canvas>
+		<div id="frame">0</div>
+    </body>
+</html>

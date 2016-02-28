@@ -25,8 +25,9 @@ function speedIncr() {
 function speedDecr() {
 	speed /= 2;
 }
-function onKey() {
-	switch(event.code) {
+function onKey(ev) {
+	ev.preventDefault();
+	switch(ev.code) {
 		case "KeyW":
 			direction = vec2(0, 1);
 			break;
@@ -41,8 +42,8 @@ function onKey() {
 			break;
 	}
 }
-function onClick() {
-	pos = mapToGL(vec2(event.clientX, event.clientY));
+function onClick(ev) {
+	pos = mapToGL(vec2(ev.clientX, ev.clientY));
 	console.log(pos);
 }
 
@@ -60,7 +61,10 @@ function initScene() {
 
 	gl.clearColor(1.0, 0.0, 0.0, 1.0);
 
-	prog_yellow = new Program("vert_basic_tex", "frag_tex", {
+	prog_yellow = new Program({
+		"VERTEX_SHADER": document.querySelector("#vert_basic_tex"),
+		"FRAGMENT_SHADER": document.querySelector("#frag_tex"),
+	}, {
 		"attributes": ["vPosition", "vTexCoord"],
 		"uniforms": ["vColor", "mTransform", "uTex"],
 	});
@@ -68,7 +72,7 @@ function initScene() {
 	prog_yellow.u.mTransform.set(mat4());
 
 	tex_stop = new Texture();
-	tex_stop.load("Bob_Ross_afro.gif");
+	tex_stop.load("stop.jpg");
 
 	var pts = [
 		vec2(-0.5, -0.25),
@@ -92,7 +96,7 @@ function update() {
 
 	// Rotate if need be
 	if(rotating) {
-		rotation += 300; // rad
+		rotation += 0.05; // rad
 	}
 }
 
