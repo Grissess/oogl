@@ -68,11 +68,11 @@ function initScene() {
 		"attributes": ["vPosition", "vTexCoord"],
 		"uniforms": ["vColor", "mTransform", "uTex"],
 	});
-	prog_yellow.u.vColor.set(vec4(1.0, 1.0, 1.0, 1.0));
+	prog_yellow.u.vColor.set(vec4(0.3, 1.0, 0.2, 1.0));
 	prog_yellow.u.mTransform.set(mat4());
 
 	tex_stop = new Texture();
-	tex_stop.load("stop.jpg");
+	tex_stop.load("Bob_Ross_afro.gif");
 
 	var pts = [
 		vec2(-0.5, -0.25),
@@ -111,6 +111,8 @@ function drawAll() {
 
 	update();
 
+	gl.enable(gl.BLEND);
+	gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 	prog_yellow.u.mTransform.set(
 		mult(
 			translate(pos[0], pos[1], 0),

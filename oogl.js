@@ -56,9 +56,10 @@ Object.defineProperty(Buffer.prototype, "glType", {
 	}
 });
 
-function UniformVar(prog, name) {
+function UniformVar(prog, name, type) {
 	this.prog = prog;
 	this.name = name;
+	this.type = type;
 	this.rebind();
 }
 
@@ -111,15 +112,20 @@ UniformVar.prototype.set = function(val) {
 		return;
 	}
 	if(typeof(val) == "number") {
-		gl.uniform1f(this.index, val);
+		if(this.type == gl.INT || this.type == gl.UNSIGNED_INT) {
+			gl.uniform1i(this.index, val);
+		} else {
+			gl.uniform1f(this.index, val);
+		}
 		return;
 	}
 	throw new Error("Unknown type to set: "+val);
 };
 
-function AttribVar(prog, name) {
+function AttribVar(prog, name, type) {
 	this.prog = prog;
 	this.name = name;
+	this.type = type;
 	this.rebind();
 }
 
@@ -226,20 +232,18 @@ function _loader_start(req) {
 }
 
 function Program(sources, options) {
-	var uniform_names = options.uniforms || [];
-	var attribute_names = options.attributes || [];
 	this.prog = gl.createProgram();
 	for(shadtp in sources) {
 		if(Object.prototype.hasOwnProperty.call(sources, shadtp)) {
 			var value = sources[shadtp];
 			if(value instanceof HTMLScriptElement) {
-				if(!value.text.length) {
+				if(value.src.length) {
 					var xhr = new XMLHttpRequest();
 					xhr.open('GET', value.src, false);
 					xhr.send(null);
-					value = xhr.responseText;
+					value = '#line 1 0\n' + value.text + '#line 1 1\n' + xhr.responseText;
 				} else {
-					value = value.text;
+					value = '#line 1 0\n' + value.text;
 				}
 			}
 			shad = gl.createShader(gl[shadtp]);
@@ -255,7 +259,7 @@ function Program(sources, options) {
 	}
 	gl.linkProgram(this.prog);
 	if(!gl.getProgramParameter(this.prog, gl.LINK_STATUS)) {
-		alert("Couldn't link shader program");
+		alert(gl.getProgramInfoLog(this.prog));
 		return;
 	}
 	this.use();
@@ -263,15 +267,33 @@ function Program(sources, options) {
 	this.u = this.uniforms;
 	this.attributes = {};
 	this.a = this.attributes;
-	var outer = this;
-	uniform_names.forEach(function(name) {
-		outer.uniforms[name] = new UniformVar(outer.prog, name);
-		outer.uniforms[name].program = outer;
-	});
-	attribute_names.forEach(function(name) {
-		outer.attributes[name] = new AttribVar(outer.prog, name);
-		outer.attributes[name].program = outer;
-	});
+	var num_u = gl.getProgramParameter(this.prog, gl.ACTIVE_UNIFORMS);
+	var num_a = gl.getProgramParameter(this.prog, gl.ACTIVE_ATTRIBUTES);
+	var i, vinfo;
+	for(i = 0; i < num_u; i++) {
+		vinfo = gl.getActiveUniform(this.prog, i);
+		if(vinfo.size > 1) {
+			var basename = vinfo.name.substring(0, vinfo.name.length - 3);
+			var _this = this;
+			this.uniforms[basename] = Array.apply(null, new Array(vinfo.size)).map(function (_, idx) {
+				return new UniformVar(_this.prog, basename + '[' + idx + ']', vinfo.type);
+			});
+		} else {
+			this.uniforms[vinfo.name] = new UniformVar(this.prog, vinfo.name, vinfo.type);
+		}
+	}
+	for(i = 0; i < num_a; i++) {
+		vinfo = gl.getActiveAttrib(this.prog, i);
+		if(vinfo.size > 1) {
+			var basename = vinfo.name.substring(0, vinfo.name.length - 3);
+			var _this = this;
+			this.attributes[vinfo.name] = Array.apply(null, new Array(vinfo.size)).map(function (_, idx) {
+				return new AttribVar(_this.prog, basename + '[' + idx + ']', vinfo.type);
+			});
+		} else {
+			this.attributes[vinfo.name] = new AttribVar(this.prog, vinfo.name, vinfo.type);
+		}
+	}
 }
 
 Program.prototype.use = function() {
@@ -283,7 +305,9 @@ Program.prototype.draw = function(prim, start_obj, amt) {
 	if(start_obj == undefined || (type(start_obj) == "number" && amt == undefined)) {
 		amt = 0
 		for(var name in this.attributes) {
-			amt = Math.max(amt, this.a[name].buffer.items);
+			if(this.a[name].buffer) {
+				amt = Math.max(amt, this.a[name].buffer.items);
+			}
 		}
 	} else {
 		amt = start_obj.items;

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+		<title>Project 1</title>
+		
+		<script type="x-shader/x-vertex" id="vert_basic" src="basic.vs"></script>
+		<script type="x-shader/x-fragment" id="frag_solid" src="solid.fs"></script>
+
+		<script type="text/javascript" src="Common/webgl-utils.js"></script>
+		<script type="text/javascript" src="Common/MV.js"></script>
+		<script type="text/javascript" src="quat.js"></script>
+		<script type="text/javascript" src="oogl.js"></script>
+		<script type="text/javascript" src="polytope.js"></script>
+		<script type="text/javascript" src="project1.js"></script>
+		<style type="text/css">
+#container
+{
+	margin: 45px 0;
+	padding: 0;
+	width: 100%;
+	text-align: center;
+}
+
+#gl-canvas
+{
+	margin: 0;
+	padding: 0;
+	width: 640px;
+	height: 640px;
+}
+		</style>
+	</head>
+    <body onload="initScene();" onkeypress="onKey(event);" style="margin: 0; padding: 0;">
+		<h1>Score: <span id="score"></span></h1>
+		<h1>Bonus: <span id="bonus"></span></h1>
+		<h2>Remaining time: <span id="remaining"></span></h1>
+		<div id="container">
+			<canvas onmousedown="onMouseDown(event);" onmouseup="onMouseUp(event);" onmousemove="onMove(event);" id="gl-canvas"></canvas>
+		</div>
+		<div id="frame">0</div>
+    </body>
+</html>
